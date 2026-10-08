@@ -1,0 +1,49 @@
+{
+  "config": {
+    "population": 49000,
+    "children_fraction": 0.3,
+    "beta": 0.3,
+    "sigma": 0.2,
+    "gamma": 0.1,
+    "initial_exposed": 20,
+    "initial_infected": 10,
+    "compliance": 0.85,
+    "days": 180,
+    "capacity": 100,
+    "hospital_fraction": 0.05,
+    "step_size": 0.5,
+    "cost_weight": 0.002,
+    "overflow_weight": 1.0,
+    "switch_weight": 0.0002
+  },
+  "actions": [
+    [
+      0.0,
+      0.0
+    ],
+    [
+      0.35,
+      0.35
+    ],
+    [
+      0.15,
+      0.65
+    ],
+    [
+      0.85,
+      0.85
+    ]
+  ],
+  "episodes_per_seed": 1200,
+  "training_seeds": [
+    11,
+    22,
+    33
+  ],
+  "evaluation_seeds": [
+    10000,
+    10039
+  ],
+  "python": "3.12.14",
+  "numpy": "2.3.5"
+}

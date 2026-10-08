@@ -1,0 +1,30 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EpiControl AI</title><style>
+body{font:16px system-ui;background:#f6f8fa;color:#172c3e;margin:0}main{max-width:1100px;margin:40px auto;padding:24px}
+h1{margin:0}p{line-height:1.6}form{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;background:white;padding:24px;border-radius:12px}
+label{display:grid;gap:6px}input,select,button{font:inherit;padding:10px;border:1px solid #acb8c3;border-radius:6px}
+button{background:#165d8f;color:white;cursor:pointer}button:disabled{opacity:.5}canvas{width:100%;height:380px;background:white;margin-top:20px}
+#metrics{display:flex;gap:24px;flex-wrap:wrap;margin:20px 0}#error{color:#a20000}table{border-collapse:collapse;background:white;width:100%}td,th{border-bottom:1px solid #ddd;padding:10px;text-align:left}@media(max-width:700px){form{grid-template-columns:1fr}}
+</style><main><h1>EpiControl AI</h1><p>Explore synthetic epidemic scenarios with a two-cohort SEIR model. Adjust assumptions and compare restriction policies. These results describe a simulation and have not been validated for public-health decisions.</p>
+<form id="controls">
+<label>Population<input name="population" type="number" min="1" value="49000" required></label>
+<label>Transmission rate per day<input name="beta" type="number" min="0" max="2" step=".01" value=".3" required></label>
+<label>Horizon in days<input name="days" type="number" min="1" max="730" value="180" required></label>
+<label>Initial infectious<input name="initial_infected" type="number" min="0" value="10" required></label>
+<label>Initial exposed<input name="initial_exposed" type="number" min="0" value="20" required></label>
+<label>Compliance fraction<input name="compliance" type="number" min="0" max="1" step=".05" value=".85" required></label>
+<label>Simulated capacity<input name="capacity" type="number" min="1" value="100" required></label>
+<label>Policy<select name="policy"><option value="none">No restriction</option><option value="moderate">Moderate uniform</option><option value="targeted">Adult targeted</option><option value="strict">Strict uniform</option><option value="threshold">Prevalence threshold</option><option value="q_learning">Learned Q policy</option></select></label>
+<button type="submit">Run scenario</button><button type="button" id="compare">Compare policies</button></form>
+<p id="error" role="alert"></p><div id="metrics" aria-live="polite"></div><canvas id="plot" width="1100" height="400" aria-label="Simulated infectious population over time"></canvas>
+<p>Blue: total infectious. Orange: adult infectious. Green: child infectious. The hospital demand proxy equals 5% of current infectious people; it is not a clinical occupancy forecast. Restriction cost is a unitless proxy.</p><div id="comparison"></div></main>
+<script>
+const form=document.querySelector('form'),err=document.querySelector('#error'),metrics=document.querySelector('#metrics');
+const payload=()=>Object.fromEntries(new FormData(form));
+async function api(endpoint){err.textContent='';const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload())});const data=await response.json();if(!response.ok)throw Error(data.error||'Request failed');return data}
+function showMetrics(m){metrics.replaceChildren();for(const [name,value] of [['Peak infectious',m.peak_infectious.toFixed(1)],['Attack rate',(100*m.attack_rate).toFixed(2)+'%'],['Peak day',m.peak_day],['Days above capacity',m.days_above_capacity],['Mean restriction cost',m.mean_restriction_cost.toFixed(3)]]){const el=document.createElement('span');el.textContent=name+': '+value;metrics.append(el)}}
+function plot(rows){const c=document.querySelector('canvas'),x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);const pad=65,w=c.width-2*pad,h=c.height-2*pad,max=Math.max(1,...rows.map(r=>r.I)),end=rows.at(-1).day;x.font='14px system-ui';x.fillStyle='#172c3e';x.fillText('Infectious people',pad,25);x.fillText('Time (days)',c.width/2,c.height-8);for(let j=0;j<=4;j++){const y=pad+h-j*h/4;x.strokeStyle='#dde3e9';x.beginPath();x.moveTo(pad,y);x.lineTo(pad+w,y);x.stroke();x.fillText((max*j/4).toFixed(0),5,y);x.fillText((end*j/4).toFixed(0),pad+w*j/4,pad+h+25)}for(const [key,color] of [['I','#1565c0'],['adult_I','#c65c00'],['child_I','#187345']]){x.strokeStyle=color;x.lineWidth=2;x.beginPath();rows.forEach((r,i)=>{const px=pad+w*r.day/end,py=pad+h-h*r[key]/max;i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke()}}
+async function busy(fn){document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await fn()}catch(e){err.textContent=e.message}finally{document.querySelectorAll('button').forEach(b=>b.disabled=false)}}
+form.onsubmit=e=>{e.preventDefault();busy(async()=>{const d=await api('/run_simulation');showMetrics(d.metrics);plot(d.trajectory)})};
+document.querySelector('#compare').onclick=()=>{if(!form.reportValidity())return;busy(async()=>{const d=await api('/compare_strategies');const table=document.createElement('table');const head=table.insertRow();for(const t of ['Policy','Peak infectious','Attack rate','Cost','Return']){const th=document.createElement('th');th.textContent=t;head.append(th)}for(const [name,m] of Object.entries(d.comparison)){const row=table.insertRow();for(const t of [name,m.peak_infectious.toFixed(1),(m.attack_rate*100).toFixed(2)+'%',m.mean_restriction_cost.toFixed(3),m.return.toFixed(4)])row.insertCell().textContent=t}document.querySelector('#comparison').replaceChildren(table)})};
+form.requestSubmit();</script></html>

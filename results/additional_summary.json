@@ -1,0 +1,22 @@
+{
+  "Strict": {
+    "peak_before_release": 24.49646578236719,
+    "peak_after_release": 11490.935729784216,
+    "attack_rate_365": 0.8966122564662079
+  },
+  "Q11": {
+    "peak_before_release": 1528.571194848655,
+    "peak_after_release": 8303.263431412857,
+    "attack_rate_365": 0.9507836617880372
+  },
+  "Q22": {
+    "peak_before_release": 909.9089802546448,
+    "peak_after_release": 9657.363730711524,
+    "attack_rate_365": 0.9601135590541088
+  },
+  "Q33": {
+    "peak_before_release": 465.6011772762924,
+    "peak_after_release": 10615.633717132174,
+    "attack_rate_365": 0.9642458499103933
+  }
+}
